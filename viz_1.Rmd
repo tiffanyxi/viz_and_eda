@@ -7,12 +7,17 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
 
 library(tidyverse)
 library(ggridges)
 ```
 
-```{r data_import}
+```{r data_import, cache = TRUE}
 library(rnoaa)
 
 weather_df = 
@@ -27,19 +32,35 @@ weather_df =
     tmin = tmin / 10,
     tmax = tmax / 10) %>%
   select(name, id, everything())
+weather_df %>% View
 ```
+
+## Start a plot
+
+Blank plot
 
 ```{r}
 ggplot(weather_df, aes(x = tmin, y = tmax))
 ```
+
+Scatterplot
+
 ```{r}
 ggplot(weather_df, aes(x = tmin, y = tmax)) + 
   geom_point()
 ```
 
+
 ```{r}
 weather_df %>%
+  filter(name == "CentralPark_NY") %>% 
   ggplot(aes(x = tmin, y = tmax)) + 
+  geom_point()
+```
+
+```{r}
+weather_sp = 
+  ggplot(weather_df, aes(x = tmin, y = tmax)) + 
   geom_point()
 ```
 
@@ -49,57 +70,235 @@ plot_weather =
   ggplot(aes(x = tmin, y = tmax)) 
 
 plot_weather + geom_point()
-
 ```
+
+## More plot options
+
+Add an aesthetic
 
 ```{r}
 ggplot(weather_df, aes(x = tmin, y = tmax)) + 
   geom_point(aes(color = name))
 ```
 
+Add a geom
+add a smooth line (global function)
+
+se = FALSE---get rid of confidence interval
 ```{r}
 ggplot(weather_df, aes(x = tmin, y = tmax)) + 
-  geom_point(aes(color = name), alpha = .5) +
+  geom_point(aes(color = name)) + 
   geom_smooth(se = FALSE)
 ```
 
+Add some options ...
 
 ```{r}
-ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) + 
-  geom_point(alpha = .3) +
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .4) +
   geom_smooth(se = FALSE)
 ```
+alpha doesn't work for geom_smooth
 
-Facetting
+
+color = name is a global map
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) + 
+  geom_point(alpha = .4) +
+  geom_smooth(se = FALSE)
+```
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .4) +
+  geom_smooth(aes(color = name), se = FALSE)
+```
+same result(less straightforward)
+
+```{r}
+ggplot(weather_df, aes(x = tmin, y = tmax, color = prcp)) + 
+  geom_point(alpha = .4)
+```
+
+Facetting ...
 
 ```{r}
 ggplot(weather_df, aes(x = tmin, y = tmax, color = name)) + 
   geom_point(alpha = .4) +
   geom_smooth(se = FALSE) + 
-  facet_grid(. ~ name)
+  facet_grid( ~ name)
 ```
 
+
+A more interesting plot
+
 Precipitation
+
 ```{r}
-ggplot(weather_df, aes(x = date, y = tmax, color = name)) + 
-  geom_point(aes(size = prcp), alpha = .5) +
+ggplot(weather_df, aes(x = date, y = tmax, color = name, size = prcp)) + 
+  geom_point(alpha = .5) +
   geom_smooth(se = FALSE) + 
-  facet_grid(. ~ name)
+  facet_grid(~ name)
 ```
 
 ```{r}
 ggplot(weather_df, aes(x = date, y = tmax, color = name)) + 
   geom_line()
-  
 ```
+
+Learning Assessment
+
+```{r}
+weather_df %>% 
+  filter(name == "CentralPark_NY") %>% 
+  mutate(tmax_f = (tmax * 9/5) + 32, tmin_f = (tmin * 9/5) + 32) %>% 
+  ggplot(aes(x = tmax_f, y = tmin_f)) +
+  geom_point(alpha = .4) +
+  geom_smooth(method = lm, se = FALSE)
+```
+?geom_smooth
+
+##Tips and tricks
 
 ```{r}
 ggplot(weather_df, aes(x = date, y = tmax, color = name)) + 
   geom_smooth(se = FALSE) 
 ```
 
+To avoid overplotting---lots of---1000000 data
+
 ```{r}
+ggplot(weather_df, aes(x = tmax, y = tmin)) + 
+  geom_hex()
+```
+
+```{r}
+ggplot(weather_df, aes(x = tmax, y = tmin)) + 
+  geom_bin2d()
+```
+
+```{r}
+ggplot(weather_df, aes(x = tmax, y = tmin)) + 
+  geom_density2d()
+```
+
+
+Why the two lines below don’t produce the same result:
+
+```{r}
+#color setted to blue outside the aes mapping
 ggplot(weather_df) + geom_point(aes(x = tmax, y = tmin), color = "blue")
+
+#color setted to blue inside the aes mapping, we’re implicitly creating a color variable that has the value blue everywhere; ggplot is then assigning colors according to this variable using the default color scheme.
 ggplot(weather_df) + geom_point(aes(x = tmax, y = tmin, color = "blue"))
 ```
+
+## Univariate plots
+
+Histograms
+
+```{r}
+ggplot(weather_df, aes(x = tmax)) + 
+  geom_histogram()
+```
+
+```{r}
+ggplot(weather_df, aes(x = tmax)) + 
+  geom_histogram()+
+  facet_grid(~name)
+```
+
+```{r}
+ggplot(weather_df, aes(x = tmax, fill = name)) + 
+  geom_histogram()
+```
+
+position = "dodge"----places the bars for each group side-by-side
+```{r}
+ggplot(weather_df, aes(x = tmax, fill = name)) + 
+  geom_histogram(position = "dodge", binwidth = 2)
+```
+
+
+Density plot
+
+```{r}
+ggplot(weather_df, aes(x = tmax, fill = name)) + 
+  geom_density(alpha = .5)
+```
+
+```{r}
+ggplot(weather_df, aes(x = tmax, fill = name)) + 
+  geom_density(alpha = .4, adjust = .5, color = "blue")
+```
+
+
+Boxplots
+```{r}
+ggplot(weather_df, aes(x = name, y = tmax)) + 
+  geom_boxplot()
+```
+
+Violin plot
+
+```{r}
+ggplot(weather_df, aes(x = name, y = tmax)) + 
+  geom_violin()
+```
+
+```{r}
+ggplot(weather_df, aes(x = name, y = tmax)) + 
+  geom_violin(aes(fill = name), color = "blue", alpha = .5) + 
+  stat_summary(fun.y = median, geom = "point", color = "blue", size = 3)
+```
+
+Ridge plots
+
+```{r}
+ggplot(weather_df, aes(x = tmax, y = name)) + 
+  geom_density_ridges(scale = .85)
+```
+
+#Learning Assessment: compare precipitation across locations
+
+highly skewed!
+
+```{r}
+ggplot(weather_df, aes(x = prcp)) + 
+  geom_density(aes(fill = name), alpha = .5) 
+```
+
+```{r}
+ggplot(weather_df, aes(x = prcp)) + 
+  geom_histogram()
+```
+
+```{r}
+ggplot(weather_df, aes(x = prcp, y = name)) + 
+  geom_density_ridges(scale = .85)
+```
+
+```{r}
+ggplot(weather_df, aes(y = prcp, x = name)) + 
+  geom_boxplot() 
+```
+
+compliment this with a plot showing data for all precipitation less than 100, or for a data omitting days with no precipitation
+```{r}
+weather_df %>% 
+  filter(prcp > 0) %>% 
+  ggplot(aes(x = prcp, y = name)) + 
+  geom_density_ridges(scale = .85)
+
+```
+
+
+##Saving plots
+
+```{r}
+weather_plot = ggplot(weather_df, aes(x = tmin, y = tmax)) + 
+  geom_point(aes(color = name), alpha = .5) 
+
+ggsave("weather_plot.pdf", weather_plot, width = 8, height = 5)
+```
+
 
