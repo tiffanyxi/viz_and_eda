@@ -258,14 +258,29 @@ ggplot(weather_df, aes(x = tmax, y = name)) +
   geom_density_ridges(scale = .85)
 ```
 
-#Learning Assessment: compare precipitation across locations
+##Learning Assessment: compare precipitation across locations
 
 highly skewed!
+
+Make a bunch of plot
+
+```{r}
+ggplot(weather_df, aes(y = prcp, x = name)) + 
+  geom_boxplot() 
+```
+
+violin-worse
+```{r}
+ggplot(weather_df, aes(y = prcp, x = name)) + 
+  geom_violin() 
+```
 
 ```{r}
 ggplot(weather_df, aes(x = prcp)) + 
   geom_density(aes(fill = name), alpha = .5) 
 ```
+
+
 
 ```{r}
 ggplot(weather_df, aes(x = prcp)) + 
@@ -277,10 +292,6 @@ ggplot(weather_df, aes(x = prcp, y = name)) +
   geom_density_ridges(scale = .85)
 ```
 
-```{r}
-ggplot(weather_df, aes(y = prcp, x = name)) + 
-  geom_boxplot() 
-```
 
 compliment this with a plot showing data for all precipitation less than 100, or for a data omitting days with no precipitation
 ```{r}
