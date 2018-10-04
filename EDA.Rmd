@@ -17,3 +17,134 @@ library(tidyverse)
 theme_set(theme_bw() + theme(legend.position = "bottom"))
 ```
 
+
+##Data import
+
+```{r data_import}
+weather_df = 
+  rnoaa::meteo_pull_monitors(c("USW00094728", "USC00519397", "USS0023B17S"),
+                      var = c("PRCP", "TMIN", "TMAX"), 
+                      date_min = "2017-01-01",
+                      date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY", 
+                      USC00519397 = "Waikiki_HA",
+                      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10,
+    month = lubridate::floor_date(date, unit = "month")) %>%
+  select(name, id, date, month, everything())
+
+```
+
+##Start grouping
+
+```{r}
+weather_df %>% 
+  group_by(name, month)
+```
+
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(number = n())
+```
+
+
+```{r}
+weather_df %>% 
+  group_by(name) %>% 
+  summarize(number = n())
+```
+
+
+```{r}
+weather_df %>% 
+  group_by(month) %>% 
+  summarize(number = n())
+```
+
+
+```{r}
+weather_df %>%
+  count(month)
+```
+
+
+```{r}
+weather_df %>%
+  group_by(month) %>%
+  summarize(n_obs = n(),
+            n_days = n_distinct(date))
+```
+
+##Grouped summaries
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(number = n(),
+            num_na = sum(is.na(tmax)),
+            mean_tmax = mean(tmax))
+```
+
+#different from mutate----repeat the number to fill in the new column
+```{r}
+weather_df %>% 
+  group_by(name) %>% 
+  summarize(number = n(),
+            mean_tmax = mean(tmax, na.rm = TRUE))
+#na.rm = TRUE--remove mising value--default set to FALSE
+```
+
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(number = n(),
+            mean_prec = mean(prcp, na.rm = TRUE),
+            median_tmax = median(tmax),
+            sd_tmin = sd(tmin),
+            mean_tmax = mean(tmax))
+```
+
+This is still a tibble!
+
+```{r}
+weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(number = n(),
+            median_tmax = median(tmax, na.rm = TRUE),
+            sd_tmin = sd(tmin, na.rm = TRUE),
+            mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
+  ggplot(aes(x = month, y = mean_tmax, color = name)) +
+  geom_point()
+```
+
+plot two tables at once
+
+```{r}
+month_df = weather_df %>% 
+  group_by(name, month) %>% 
+  summarize(number = n(),
+            median_tmax = median(tmax, na.rm = TRUE),
+            sd_tmin = sd(tmin, na.rm = TRUE),
+            mean_tmax = mean(tmax, na.rm = TRUE))
+
+  ggplot(weather_df, aes(x = date, y = tmax, color = name)) +
+  geom_point(alpha = .5) +
+  geom_line(data = month_df, aes(x = month, y = mean_tmax, color = name))
+```
+
+
+Tidy is not always best for human readable
+
+```{r}
+weather_df %>%
+  group_by(name, month) %>%
+  summarize(mean_tmax = mean(tmax, na.rm = TRUE)) %>% 
+  spread(key = name, value = mean_tmax) %>% 
+  knitr::kable(digits = 2)
+```
+
