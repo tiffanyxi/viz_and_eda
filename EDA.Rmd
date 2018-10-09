@@ -84,6 +84,22 @@ weather_df %>%
   count(name, month)
 ```
 
+##count vs table
+table outcome is hard to use(class--table)
+```{r}
+weather_df %>% 
+  pull(name) %>% 
+  table %>% 
+  class
+```
+
+```{r}
+weather_df %>% 
+  pull(name) %>% 
+  table %>% 
+  which.min() %>% 
+  names()
+```
 
 ```{r}
 weather_df %>%
